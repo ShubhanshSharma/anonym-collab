@@ -17,6 +17,7 @@ export default function ChatLayout({ children }) {
       try {
         // Replace with your actual getMyChat() function
         const userChats = await getMyChat();
+        // console.log("checking user chats:- ", userChats);
         setChats(userChats);
         
         // Mock data for demonstration
@@ -85,7 +86,7 @@ export default function ChatLayout({ children }) {
             </div>
           ) : (
             <div className="py-2">
-              {chats.map((chat) => (
+              {chats.data.chatRooms.map((chat) => (
                 <div
                   key={chat.id}
                   onClick={() => handleChatClick(chat.id)}

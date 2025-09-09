@@ -2,74 +2,118 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import {socket} from '../../../lib/socket';
+import Image from 'next/image';
 
 export default function ChatRoomPage() {
   const { roomId } = useParams();
-  const [messages, setMessages] = useState<{ id: string; userId: string; userName: string; userAvatar: string; message: string; isCurrentUser: boolean; timestamp: string}[]>([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  let token : any;
+  let user: any;
+  // console.log(user);
+  
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+
   useEffect(() => {
-    // Load chat messages when component mounts or roomId changes
-    const loadChatMessages = async () => {
+
+    user = localStorage.getItem('user');
+    token = localStorage.getItem('token');
+    // only run if we have both values
+    if (!roomId || !token) return;
+
+    const fetchMessages = async () => {
       try {
-        // Replace with your actual getChatFromId() function
-        // const chatData = await getChatFromId(roomId);
-        // setMessages(chatData.messages);
-        
-        // Mock data for demonstration
-        const mockMessages = [
+        const res = await fetch(
+          `http://localhost:5000/api/chat/rooms/${roomId}/messages`,
           {
-            id: '1',
-            userId: 'user1',
-            userName: 'John Doe',
-            userAvatar: 'https://ui-avatars.com/api/?name=John+Doe&background=0D8ABC&color=fff',
-            message: 'Hey there! How are you doing?',
-            timestamp: '2:30 PM',
-            isCurrentUser: false
-          },
-          {
-            id: '2',
-            userId: 'current',
-            userName: 'You',
-            userAvatar: 'https://ui-avatars.com/api/?name=You&background=6366F1&color=fff',
-            message: 'Hi John! I\'m doing great, thanks for asking. How about you?',
-            timestamp: '2:32 PM',
-            isCurrentUser: true
-          },
-          {
-            id: '3',
-            userId: 'user1',
-            userName: 'John Doe',
-            userAvatar: 'https://ui-avatars.com/api/?name=John+Doe&background=0D8ABC&color=fff',
-            message: 'I\'m doing well too! Working on some exciting projects.',
-            timestamp: '2:35 PM',
-            isCurrentUser: false
-          },
-          {
-            id: '4',
-            userId: 'current',
-            userName: 'You',
-            userAvatar: 'https://ui-avatars.com/api/?name=You&background=6366F1&color=fff',
-            message: 'That sounds awesome! I\'d love to hear more about what you\'re working on.',
-            timestamp: '2:37 PM',
-            isCurrentUser: true
+            headers: { Authorization: token },
           }
-        ];
-        setMessages(mockMessages);
-      } catch (error) {
-        console.error('Error loading chat:', error);
-      } finally {
-        setLoading(false);
+        );
+
+        if (!res.ok) {
+          throw new Error(`Server returned ${res.status}`);
+        }
+
+        const data = await res.json();
+        setMessages(data.data); // update UI state
+        console.log("data:", data);
+      } catch (err) {
+        console.error("Failed to load messages", err);
       }
     };
 
-    if (roomId) {
-      loadChatMessages();
-    }
+    fetchMessages();
+  }, [roomId, token, setMessages]); // run whenever roomId or token changes
+
+
+  useEffect(() => {
+
+    socket.connect();
+
+    // listen for incoming messages from server
+    socket.on("message", (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    // optional: notify server which room you’re in
+    socket.emit("joinRoom", { roomId: "abc123" });
+
+    return () => {
+      socket.off("message");
+      socket.disconnect();
+    };
+  },[])
+
+
+
+  useEffect(() => {
+    socket.on("connect", () => console.log("🔗 Socket connected", socket.id));
+
+    socket.on("new_message", (msg) => {
+      console.log("📩 Incoming new_message:", msg);
+    });
+
+    socket.on("error", (err) => console.error("⚠️ Socket error:", err));
+
+    return () => {
+      socket.off("new_message");
+      socket.off("connect");
+      socket.off("error");
+    };
+  }, []);
+
+
+
+
+  useEffect(() => {
+    
+
+    // listen on client
+    socket.connect();
+
+    socket.emit("join_room", { roomId: roomId });
+
+    socket.on("message", (msg) => {
+      setMessages((prev) => [...prev, { ...msg, isCurrentUser: msg.sender_id === user.id }]);
+    });
+
+    setLoading(false);
+
+    return () => {
+      socket.off("message");
+      socket.disconnect();
+    };
+
   }, [roomId]);
 
+
+
+
+
+  // scroll to bottom
   useEffect(() => {
     // Scroll to bottom when new messages are added
     scrollToBottom();
@@ -79,24 +123,41 @@ export default function ChatRoomPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = (e: any) => {
+
+
+  // handle sending messages
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMessage.trim()) {
-      // Here you would typically send the message via socket.io
-      // For now, we'll just add it to the local state
-      const message = {
-        id: Date.now().toString(),
-        userId: 'current',
-        userName: 'You',
-        userAvatar: 'https://ui-avatars.com/api/?name=You&background=6366F1&color=fff',
-        message: newMessage,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isCurrentUser: true
-      };
-      setMessages(prev => [...prev, message]);
-      setNewMessage('');
-    }
+    if (!newMessage.trim()) return;
+
+    // payload for server
+    const payload = {
+      roomId: roomId,   // keep this in state / prop
+      content: newMessage,
+      replyToId: null,
+    };
+
+    // send to backend
+    socket.emit("send_message", payload);
+
+    // optional optimistic UI
+    setMessages((prev) => [
+      ...prev,
+      {
+        ...payload,
+        userName: "You",
+        userAvatar: "https://ui-avatars.com/api/?name=You&background=6366F1&color=fff",
+        isCurrentUser: true,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+
+    setNewMessage("");
   };
+
+
+
+
 
   if (loading) {
     return (
@@ -121,25 +182,25 @@ export default function ChatRoomPage() {
         {messages.map((message) => (
           <div key={message.id} className="flex items-start space-x-3">
             {/* User Avatar */}
-            <img
-              src={message.userAvatar}
-              alt={message.userName}
+            <Image
+              src={message.sender?.avatar}
+              alt={message.sender?.name}
               className="w-10 h-10 rounded-full object-cover flex-shrink-0"
             />
             
             {/* Message Content */}
             <div className="flex-1 min-w-0">
               <div className={`inline-block max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.isCurrentUser 
+                message.sender_id == user?.id 
                   ? 'bg-blue-600 text-white' 
                   : 'bg-gray-100 text-gray-900'
               }`}>
-                <p className="text-sm">{message.message}</p>
+                <p className="text-sm">{message.content}</p>
               </div>
               
               {/* Timestamp */}
               <p className="text-xs text-gray-500 mt-1 ml-1">
-                {message.timestamp}
+                {message.createdAt}
               </p>
             </div>
           </div>

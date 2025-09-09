@@ -71,13 +71,13 @@ const LandingPage = () => {
             variant="h2"
             component="h1"
             sx={{
-              fontWeight: 800,
-              mb: 3,
-              fontSize: { xs: '2.5rem', md: '3.5rem' },
+              fontWeight: 500,
+              my: 5,
+              fontSize: { xs: '2.5rem', md: '3.5rem', lg: '5.5rem' },
               background: 'linear-gradient(0deg, #1f1f1f, #0a0a0a)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
+              WebkitTextFillColor: 'transparent',
             }}
           >
             Anonymous Communication
@@ -90,7 +90,8 @@ const LandingPage = () => {
               maxWidth: 600,
               mx: 'auto',
               fontSize: { xs: '1.1rem', md: '1.25rem' },
-              lineHeight: 1.6
+              lineHeight: 1.6,
+              textAlign: 'justify'
             }}
           >
             Connect parties securely without revealing identities. 
@@ -134,7 +135,7 @@ const LandingPage = () => {
                 }
               }}
             >
-              Learn More
+              /chats
             </Button>
             </Link>
           </Box>
