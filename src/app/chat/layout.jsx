@@ -94,12 +94,12 @@ export default function ChatLayout({ children }) {
                 >
                   <img
                     src={chat.avatar}
-                    alt={chat.name}
+                    alt={'img'}
                     className="w-12 h-12 rounded-full object-cover"
                   />
                   <div className="ml-3 flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <h3 className="text-lg font-medium text-gray-900 truncate">
                         {chat.name}
                       </h3>
                       <span className="text-xs text-gray-500">

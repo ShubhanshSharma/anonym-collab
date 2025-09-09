@@ -14,8 +14,15 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import { LoginResponse } from "@/interface";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignInPage() {
+
+  // context:
+  const { user, token, setAuth, logout } = useAuth();
+  
+  
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState(false);
@@ -27,37 +34,58 @@ export default function SignInPage() {
     setEmailError(!regex.test(value));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
 
-    validateEmail(email);
-    if (emailError || !password) return;
+  // handle login:
+  const handleLogin = async () => {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password}),
+    });
+    
+    const payload: LoginResponse = await res.json();
+    setAuth(payload.data);
 
-    try {
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`,
-        { email, password }
-      );
-
-      const { success, message, data } = res.data;
-
-      if (success) {
-        // store token + user in localStorage
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        console.log("Login successful:", message);
-        // navigate to home page
-        router.push("/");
-      } else {
-        console.error("Login failed:", message);
-        alert(message);
-      }
-    } catch (err: any) {
-      console.error("Login error:", err.response?.data || err.message);
-      alert("Login failed, please try again.");
-    }
   };
+
+  // handle submit
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  validateEmail(email);
+  if (emailError || !password) return;
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data: LoginResponse = await res.json();
+
+    if (data.success) {
+      // ✅ store globally using context
+      setAuth(data.data);
+
+      console.log("Login successful:", data.message);
+
+      // ✅ navigate to home page
+      router.push("/");
+    } else {
+      console.error("Login failed:", data.message);
+      alert(data.message);
+    }
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("Login error:", err.message);
+    } else {
+      console.error("Unexpected error:", err);
+    }
+    alert("Login failed, please try again.");
+  }
+};
 
 
   return (

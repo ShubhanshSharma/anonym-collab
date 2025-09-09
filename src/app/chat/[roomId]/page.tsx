@@ -3,14 +3,32 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import {socket} from '../../../lib/socket';
-import Image from 'next/image';
+import { Message } from '@/interface';
+import { useAuth } from '@/context/AuthContext';
+
+
+// structure of message
+type FetchMessagesResponse = {
+  success: boolean;
+  message: string;
+  data: Message[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+  timestamp: string;
+};
+
 
 export default function ChatRoomPage() {
   const { roomId } = useParams();
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  let token : any;
-  let user: any;
+  const {user, token} = useAuth();
   // console.log(user);
   
   const [loading, setLoading] = useState(true);
@@ -19,17 +37,15 @@ export default function ChatRoomPage() {
 
   useEffect(() => {
 
-    user = localStorage.getItem('user');
-    token = localStorage.getItem('token');
     // only run if we have both values
     if (!roomId || !token) return;
 
     const fetchMessages = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/api/chat/rooms/${roomId}/messages`,
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/chat/rooms/${roomId}/messages`,
           {
-            headers: { Authorization: token },
+            headers: { Authorization: token ? token : "" },
           }
         );
 
@@ -37,7 +53,8 @@ export default function ChatRoomPage() {
           throw new Error(`Server returned ${res.status}`);
         }
 
-        const data = await res.json();
+        const data:FetchMessagesResponse = await res.json();
+
         setMessages(data.data); // update UI state
         console.log("data:", data);
       } catch (err) {
@@ -97,7 +114,7 @@ export default function ChatRoomPage() {
     socket.emit("join_room", { roomId: roomId });
 
     socket.on("message", (msg) => {
-      setMessages((prev) => [...prev, { ...msg, isCurrentUser: msg.sender_id === user.id }]);
+      setMessages((prev) => [...prev, { ...msg, isCurrentUser: msg.sender_id === user?.id }]);
     });
 
     setLoading(false);
@@ -140,15 +157,24 @@ export default function ChatRoomPage() {
     // send to backend
     socket.emit("send_message", payload);
 
-    // optional optimistic UI
+    if(!user) return;
+
     setMessages((prev) => [
       ...prev,
       {
-        ...payload,
-        userName: "You",
-        userAvatar: "https://ui-avatars.com/api/?name=You&background=6366F1&color=fff",
-        isCurrentUser: true,
-        timestamp: new Date().toISOString(),
+        id: user.id, // or from server
+        chat_room_id: roomId as string, // assuming payload has roomId
+        sender_id: user?.id, // your current user's id
+        content: newMessage,
+        message_type: "text",
+        file_url: null,
+        reply_to_id: null,
+        edited_at: null,
+        is_deleted: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        sender: user,
+        replyTo: null,
       },
     ]);
 
@@ -182,7 +208,7 @@ export default function ChatRoomPage() {
         {messages.map((message) => (
           <div key={message.id} className="flex items-start space-x-3">
             {/* User Avatar */}
-            <Image
+            <img
               src={message.sender?.avatar}
               alt={message.sender?.name}
               className="w-10 h-10 rounded-full object-cover flex-shrink-0"

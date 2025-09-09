@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Playfair_Display } from 'next/font/google';
+import { AuthProvider } from "@/context/AuthContext";
 const playfair = Playfair_Display({ subsets: ['latin'] });
 
 const geistSans = Geist({
@@ -29,9 +30,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${playfair.className} antialiased flex flex-col items-center justify-around w-screen min-h-[100dvh]`}
+        className={` antialiased flex flex-col items-center justify-around w-screen min-h-[100dvh]`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
