@@ -6,12 +6,12 @@ import { useEffect, useState } from "react";
 
 // Navbar Component
 export default function Navbar()  {
-  const [token, setToken] = useState<string | null>('');
+  const [token, setToken] = useState<string | null>(null);
 
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("token");
-    setToken(stored);
-  }
+  useEffect(() => {
+    setToken(localStorage.getItem('token'));
+
+  },[])
 
 
   return (
