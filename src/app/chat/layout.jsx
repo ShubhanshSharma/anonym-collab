@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import NewRoomPopup from '../../component/chat/createRoom';
 import getMyChat from '../../util/chat'
+import { useRoom } from '@/context/RoomContext';
 
 export default function ChatLayout({ children }) {
   const [chats, setChats] = useState([]);
   const [ showNewRoomPopup, setShowNewRoomPopup] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { clearRoom, setRoom,} = useRoom();
 
   useEffect(() => {
     // Load user's chats on component mount
@@ -55,8 +57,17 @@ export default function ChatLayout({ children }) {
     loadChats();
   }, []);
 
-  const handleChatClick = (chatId) => {
-    router.push(`/chat/${chatId}`);
+  const handleChatClick = (chat) => {
+    clearRoom();
+
+    setRoom({
+      roomName: chat.name,
+      roomId: chat.id,
+      lastMessage: chat.lastMessage,
+    })
+
+    
+    router.push(`/chat/${chat.id}`);
   };
 
   return (
@@ -89,8 +100,8 @@ export default function ChatLayout({ children }) {
               {chats.data.chatRooms.map((chat) => (
                 <div
                   key={chat.id}
-                  onClick={() => handleChatClick(chat.id)}
-                  className="flex items-center p-4 hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                  onClick={() => handleChatClick(chat)}
+                  className="flex items-center mx-2 rounded-xl border border-gray-300 px-4 py-2   hover:bg-gray-50 cursor-pointer transition-colors duration-200"
                 >
                   <img
                     src={chat.avatar}

@@ -1,10 +1,14 @@
+import { useAuth } from "@/context/AuthContext";
+
 export default async function getMyChat() {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    throw new Error("No token found in localStorage");
-  }
+  
 
   try {
+    const token = localStorage.getItem('token');
+    
+    if(!token){
+      throw new Error('request failed, could not find token');
+    }
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/chat/rooms`, {
       method: "GET",
       headers: {

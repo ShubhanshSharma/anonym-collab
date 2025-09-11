@@ -17,17 +17,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
 
 
-  const [roomName, setRoomName] = useState<string | null>(null);
-
   const setAuth = (data: LoginResponse["data"]) => {
     setUser(data.user);
     setToken(data.token);
   };
-
-  const setRoom = (name: string) => {
-
-    setRoomName(name);
-  }
 
   const logout = () => {
     setUser(null);

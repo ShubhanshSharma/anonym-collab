@@ -35,17 +35,6 @@ export default function SignInPage() {
   };
 
 
-  // handle login:
-  const handleLogin = async () => {
-    const res = await fetch("/api/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password}),
-    });
-    
-    const payload: LoginResponse = await res.json();
-    setAuth(payload.data);
-
-  };
 
   // handle submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +57,8 @@ export default function SignInPage() {
     if (data.success) {
       // ✅ store globally using context
       setAuth(data.data);
+
+      localStorage.setItem('token', data.data.token)
 
       console.log("Login successful:", data.message);
 

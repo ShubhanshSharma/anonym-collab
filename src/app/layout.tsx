@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Playfair_Display } from 'next/font/google';
 import { AuthProvider } from "@/context/AuthContext";
+import { RoomProvider } from "@/context/RoomContext";
 const playfair = Playfair_Display({ subsets: ['latin'] });
 
 const geistSans = Geist({
@@ -33,7 +34,9 @@ export default function RootLayout({
         className={` antialiased flex flex-col items-center justify-around w-screen min-h-[100dvh]`}
       >
         <AuthProvider>
+          <RoomProvider>
           {children}
+          </RoomProvider>
         </AuthProvider>
       </body>
     </html>

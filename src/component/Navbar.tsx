@@ -6,13 +6,13 @@ import { useEffect, useState } from "react";
 
 // Navbar Component
 export default function Navbar()  {
-  const [userToken, setUserToken] = useState(null);
+  const [token, setToken] = useState<string | null>('');
 
-  useEffect(() => {
-    // Check for user token in localStorage
-    const token = localStorage.getItem('token');
-    setUserToken(token);
-  }, []);
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("token");
+    setToken(stored);
+  }
+
 
   return (
     <AppBar 
@@ -53,7 +53,7 @@ export default function Navbar()  {
           </Box>
 
           {/* Sign In Button - Only show if no token */}
-          {!userToken && (
+          {!token && (
             <Link href={'/sign-in'}>
             <Button
               variant="contained"

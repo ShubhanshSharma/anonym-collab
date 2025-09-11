@@ -255,7 +255,7 @@ const LandingPage = () => {
                   Create Request
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Submit your communication needs and we'll assign a dedicated middleman.
+                  Submit your communication needs and we will assign a dedicated middleman.
                 </Typography>
               </Box>
             </Grid>

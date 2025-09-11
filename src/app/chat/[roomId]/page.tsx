@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import {socket} from '../../../lib/socket';
 import { Message } from '@/interface';
 import { useAuth } from '@/context/AuthContext';
+import { useRoom } from '@/context/RoomContext';
 
 
 // structure of message
@@ -29,6 +30,8 @@ export default function ChatRoomPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const {user, token} = useAuth();
+
+  const {roomName} = useRoom();
   // console.log(user);
   
   const [loading, setLoading] = useState(true);
@@ -198,7 +201,7 @@ export default function ChatRoomPage() {
       {/* Chat Header */}
       <div className="bg-white border-b border-gray-200 p-4">
         <h2 className="text-lg font-semibold text-gray-800">
-          Chat Room {roomId}
+          Chat Room:- {roomName}
         </h2>
         
       </div>
